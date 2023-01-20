@@ -1,45 +1,47 @@
-local CollectionService = game:GetService('CollectionService')
-local UserInputService = game:GetService('UserInputService')
+local CollectionService = game:GetService("CollectionService")
+local UserInputService = game:GetService("UserInputService")
 
-local doorAddedFunction = getconnections(CollectionService:GetInstanceAddedSignal('Door'))[1].Function
-local doors = getupvalue(doorAddedFunction, 1)
-local doorModels = {}
+local doorAddedFunction = getconnections(CollectionService:GetInstanceAddedSignal("Door"))[1].Function
 local openDoor = getupvalue(getproto(getupvalue(doorAddedFunction, 2), 1, true)[1], 7)
-local camera = workspace.CurrentCamera
-local enabled = false
+local doors = getupvalue(doorAddedFunction, 1)
 
-for _, v in next, doors do
-    if v.Model then
-        doorModels[v.Model] = v
+local camera = workspace.CurrentCamera
+local enabled = true
+
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = CollectionService:GetTagged("Door")
+raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+
+local highlight = Instance.new("Highlight")
+highlight.FillTransparency = 1
+
+local function GetDoorAncestor(part)
+    for _, door in next, doors do
+        local doorModel = door.Model
+
+        if doorModel and part:IsDescendantOf(doorModel) then
+            return door
+        end
     end
 end
 
-local raycastParams = RaycastParams.new()
-raycastParams.FilterDescendantsInstances = CollectionService:GetTagged('Door')
-raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
-
-local function GetDoor(mousePos)
-    local ray = camera:ViewportPointToRay(mousePos.X, mousePos.Y)
+local function GetClickedDoor(mousePosition)
+    local ray = camera:ViewportPointToRay(mousePosition.X, mousePosition.Y)
     local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 500, raycastParams)
     
     if raycastResult then
-        local instance = raycastResult.Instance
-        local doorModel = instance:FindFirstAncestor('Door') or instance:FindFirstAncestor('SlideDoor') or instance:FindFirstAncestor('SwingDoor')
-        
-        return doorModels[doorModel]
+        return GetDoorAncestor(raycastResult.Instance)
     end
 end
 
-local highlight = Instance.new('Highlight')
-highlight.FillTransparency = 1
-
+-- yes the mouse object would make this easier but its deprecated so yea
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then
         return
     end
     
     if enabled and input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local door = GetDoor(input.Position)
+        local door = GetClickedDoor(input.Position)
         
         if door then
             openDoor(door)
@@ -59,7 +61,8 @@ UserInputService.InputChanged:Connect(function(input, gameProcessed)
     end
     
     if enabled and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local door = GetDoor(input.Position)
+        local door = GetClickedDoor(input.Position)
+        
         highlight.Parent = door and door.Model
     end
 end)
