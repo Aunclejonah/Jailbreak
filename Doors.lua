@@ -44,7 +44,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if door then
             openDoor(door)
         end
-    elseif input.KeyCode == Enum.KeyCode.Q then
+    elseif input.KeyCode == Enum.KeyCode.RightAlt then
         enabled = not enabled
 
         if not enabled then
