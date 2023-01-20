@@ -1,0 +1,2 @@
+# Jailbreak
+Random Jailbreak cheats
