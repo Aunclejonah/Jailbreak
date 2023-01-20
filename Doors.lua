@@ -1,54 +1,65 @@
-local CollectionService = game:GetService("CollectionService")
-local ContextActionService = game:GetService("ContextActionService")
+local CollectionService = game:GetService('CollectionService')
+local UserInputService = game:GetService('UserInputService')
 
-local doorAddedFunction = getconnections(CollectionService:GetInstanceAddedSignal("Door"))[1].Function
+local doorAddedFunction = getconnections(CollectionService:GetInstanceAddedSignal('Door'))[1].Function
+local doors = getupvalue(doorAddedFunction, 1)
+local doorModels = {}
 local openDoor = getupvalue(getproto(getupvalue(doorAddedFunction, 2), 1, true)[1], 7)
 local camera = workspace.CurrentCamera
-local enabled = true
+local enabled = false
 
-local raycastParams = RaycastParams.new()
-raycastParams.FilterDescendantsInstances = CollectionService:GetTagged("Door")
-raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
-
-local highlight = Instance.new("Highlight")
-highlight.FillTransparency = 1
-
-local sortedDoors = {}
-
-for _, doorData in next, getupvalue(doorAddedFunction, 1) do
-    if doorData.Model then
-        sortedDoors[doorData.Model] = doorData
+for _, v in next, doors do
+    if v.Model then
+        doorModels[v.Model] = v
     end
 end
 
-local function getDoor(mousePosition)
-    local mouseRay = camera:ViewportPointToRay(mousePosition.X, mousePosition.Y)
-    local raycastResult = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 500, raycastParams)
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = CollectionService:GetTagged('Door')
+raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+
+local function GetDoor(mousePos)
+    local ray = camera:ViewportPointToRay(mousePos.X, mousePos.Y)
+    local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 500, raycastParams)
     
     if raycastResult then
         local instance = raycastResult.Instance
-        local doorModel = instance:FindFirstAncestor("SlideDoor") or instance:FindFirstAncestor("SwingDoor")
+        local doorModel = instance:FindFirstAncestor('Door') or instance:FindFirstAncestor('SlideDoor') or instance:FindFirstAncestor('SwingDoor')
         
-        return sortedDoors[doorModel]
+        return doorModels[doorModel]
     end
 end
 
-ContextActionService:BindAction("Doors", function(name, state, input)
-    if enabled and input.UserInputType == Enum.UserInputType.MouseButton1 and state == Enum.UserInputState.Begin then
-        local door = getDoor(input.Position)
+local highlight = Instance.new('Highlight')
+highlight.FillTransparency = 1
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then
+        return
+    end
+    
+    if enabled and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local door = GetDoor(input.Position)
         
         if door then
             openDoor(door)
         end
-    elseif enabled and input.UserInputType == Enum.UserInputType.MouseMovement and state == Enum.UserInputState.Change then
-        local door = getDoor(input.Position)
-        
-        highlight.Parent = door and door.Model
-    elseif input.KeyCode == Enum.KeyCode.Q and state == Enum.UserInputState.Begin then
+    elseif input.KeyCode == Enum.KeyCode.Q then
         enabled = not enabled
 
         if not enabled then
             highlight.Parent = nil
         end
     end
-end, false, Enum.UserInputType.MouseMovement, Enum.KeyCode.Q, Enum.UserInputType.MouseButton1)
+end)
+
+UserInputService.InputChanged:Connect(function(input, gameProcessed)
+    if gameProcessed then
+        return
+    end
+    
+    if enabled and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local door = GetDoor(input.Position)
+        highlight.Parent = door and door.Model
+    end
+end)
