@@ -56,11 +56,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 UserInputService.InputChanged:Connect(function(input, gameProcessed)
-    if gameProcessed then
-        return
-    end
-    
-    if enabled and input.UserInputType == Enum.UserInputType.MouseMovement then
+    if not gameProcessed and enabled and input.UserInputType == Enum.UserInputType.MouseMovement then
         local door = GetClickedDoor(input.Position)
         
         highlight.Parent = door and door.Model
