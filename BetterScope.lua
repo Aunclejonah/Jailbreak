@@ -86,7 +86,7 @@ local oldGetLocalVehiclePacket = vehicle.GetLocalVehiclePacket
 vehicle.GetLocalVehiclePacket = function(...)
     local callerFunction = debug.info(2, "n")
     
-    if callerFunction = "ScopeBegin" or callerFunction == "handleEquipped" then
+    if callerFunction == "ScopeBegin" or callerFunction == "handleEquipped" then
         return
     end
     
