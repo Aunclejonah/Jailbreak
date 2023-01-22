@@ -5,8 +5,9 @@ local Configuration = {
 
 local player = game:GetService("Players").LocalPlayer
 
-local itemSystemFolder = game:GetService("ReplicatedStorage").Game.ItemSystem
-local itemSystem, itemCamera = require(itemSystemFolder.ItemSystem), require(itemSystemFolder.ItemCamera)
+local gameFolder = game:GetService("ReplicatedStorage").Game
+local itemSystem, itemCamera = require(gameFolder.ItemSystem.ItemSystem), require(gameFolder.ItemSystem.ItemCamera)
+local vehicle = require(gameFolder.Vehicle)
 
 local zoomData = getupvalue(require(player.PlayerScripts.PlayerModule.CameraModule.ZoomController).Update, 1)
 local transparency = {}
@@ -79,6 +80,17 @@ local function ModifyItem(item)
     item.ScopeEnd = function(item)
         Scope(oldScopeEnd, item, false)
     end
+end
+
+local oldGetLocalVehiclePacket = vehicle.GetLocalVehiclePacket
+vehicle.GetLocalVehiclePacket = function(...)
+    local callerFunction = debug.info(2, "n")
+    
+    if callerFunction = "ScopeBegin" or callerFunction == "handleEquipped" then
+        return
+    end
+    
+    return oldGetLocalVehiclePacket(...)
 end
 
 itemSystem.OnLocalItemEquipped:Connect(ModifyItem)
